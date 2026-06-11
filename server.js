@@ -321,27 +321,6 @@ function analyzeCurveFeatures(curvePoints, modelType, params) {
     }
   }
 
-  if (modelType === 'exponential') {
-    if (inflectionPoints.length === 0 && n > 10) {
-      const midIdx = Math.floor(n / 2);
-      const midPoint = curvePoints[midIdx];
-      const d1Mid = firstDeriv[midIdx];
-      const d2Mid = secondDeriv[midIdx];
-      if (Math.abs(d2Mid) > inflectionThreshold * 0.5) {
-        inflectionPoints.push({
-          id: 'exp_candidate',
-          type: 'inflection',
-          x: midPoint.x,
-          y: midPoint.y,
-          curvature: d2Mid,
-          confidence: 0.5,
-          basis: `指数模型候选拐点：位于区间中点附近，一阶导数 ${d1Mid.toFixed(4)}，二阶导数 ${d2Mid.toFixed(4)}`,
-          confirmed: false
-        });
-      }
-    }
-  }
-
   return { peaks, valleys, maxRiseInterval, inflectionPoints };
 }
 
