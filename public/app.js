@@ -3,6 +3,7 @@ let residualChart = null;
 let currentResultId = null;
 let currentDatasetId = null;
 let isDirty = false;
+let currentFeatures = null;
 
 const modelTypeLabels = {
   linear: '线性模型',
@@ -79,6 +80,49 @@ function initCharts() {
           pointRadius: 9,
           pointStyle: 'triangle',
           showLine: false
+        },
+        {
+          label: '峰值',
+          data: [],
+          backgroundColor: '#10b981',
+          borderColor: '#059669',
+          pointRadius: 10,
+          pointHoverRadius: 12,
+          pointStyle: 'triangle',
+          showLine: false
+        },
+        {
+          label: '谷值',
+          data: [],
+          backgroundColor: '#f97316',
+          borderColor: '#ea580c',
+          pointRadius: 10,
+          pointHoverRadius: 12,
+          pointStyle: 'rectRot',
+          showLine: false
+        },
+        {
+          label: '拐点',
+          data: [],
+          backgroundColor: '#8b5cf6',
+          borderColor: '#7c3aed',
+          pointRadius: 10,
+          pointHoverRadius: 12,
+          pointStyle: 'rect',
+          showLine: false
+        },
+        {
+          label: '最大上升区间',
+          data: [],
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6, 182, 212, 0.15)',
+          borderWidth: 4,
+          borderDash: [6, 4],
+          pointRadius: 6,
+          pointBackgroundColor: '#06b6d4',
+          pointBorderColor: '#0891b2',
+          showLine: true,
+          fill: true
         }
       ]
     },
@@ -94,9 +138,45 @@ function initCharts() {
           padding: 12,
           cornerRadius: 8,
           callbacks: {
+            title: (context) => {
+              const label = context[0].dataset.label;
+              if (label === '最大上升区间') {
+                return '最大上升区间';
+              }
+              return label;
+            },
             label: (context) => {
+              const label = context.dataset.label;
               const x = context.parsed.x?.toFixed(4) || 0;
               const y = context.parsed.y?.toFixed(4) || 0;
+              if (label === '峰值' || label === '谷值' || label === '拐点') {
+                const features = currentFeatures;
+                if (features) {
+                  let feature = null;
+                  if (label === '峰值') feature = features.peaks.find(p => Math.abs(p.x - context.parsed.x) < 0.001);
+                  else if (label === '谷值') feature = features.valleys.find(v => Math.abs(v.x - context.parsed.x) < 0.001);
+                  else if (label === '拐点') feature = features.inflectionPoints.find(i => Math.abs(i.x - context.parsed.x) < 0.001);
+                  if (feature) {
+                    return [
+                      `坐标: (${x}, ${y})`,
+                      `置信度: ${(feature.confidence * 100).toFixed(1)}%`,
+                      `状态: ${feature.confirmed ? '✓ 已确认' : '待确认'}`
+                    ];
+                  }
+                }
+                return `(${x}, ${y})`;
+              }
+              if (label === '最大上升区间') {
+                const features = currentFeatures;
+                if (features && features.maxRiseInterval) {
+                  return [
+                    `起始: (${features.maxRiseInterval.startX.toFixed(4)}, ${features.maxRiseInterval.startY.toFixed(4)})`,
+                    `结束: (${features.maxRiseInterval.endX.toFixed(4)}, ${features.maxRiseInterval.endY.toFixed(4)})`,
+                    `平均斜率: ${features.maxRiseInterval.slope.toFixed(4)}`,
+                    `ΔY: ${features.maxRiseInterval.deltaY.toFixed(4)}`
+                  ];
+                }
+              }
               return `(${x}, ${y})`;
             }
           }
@@ -232,6 +312,8 @@ function resetDisplay() {
   document.getElementById('metricMAE').textContent = '—';
   document.getElementById('eqFormula').textContent = '等待拟合...';
   document.getElementById('outliersSection').style.display = 'none';
+  document.getElementById('featuresSection').style.display = 'none';
+  currentFeatures = null;
 
   if (fitChart) {
     fitChart.data.datasets.forEach(ds => ds.data = []);
@@ -324,7 +406,184 @@ async function performFit() {
   }
 }
 
+function getFeatureTypeInfo(type) {
+  const info = {
+    peak: { label: '峰值', icon: '📈', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.3)' },
+    valley: { label: '谷值', icon: '📉', color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.08)', borderColor: 'rgba(249, 115, 22, 0.3)' },
+    inflection: { label: '拐点', icon: '🔄', color: '#8b5cf6', bgColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.3)' },
+    maxRiseInterval: { label: '最大上升区间', icon: '🚀', color: '#06b6d4', bgColor: 'rgba(6, 182, 212, 0.08)', borderColor: 'rgba(6, 182, 212, 0.3)' }
+  };
+  return info[type] || { label: type, icon: '❓', color: '#64748b', bgColor: '#f8fafc', borderColor: '#e2e8f0' };
+}
+
+function renderFeatureCard(feature, type) {
+  const info = getFeatureTypeInfo(type || feature.type);
+  const isInterval = feature.type === 'maxRiseInterval';
+  const coordText = isInterval
+    ? `起始: (${feature.startX.toFixed(4)}, ${feature.startY.toFixed(4)})<br>结束: (${feature.endX.toFixed(4)}, ${feature.endY.toFixed(4)})`
+    : `坐标: (${feature.x.toFixed(4)}, ${feature.y.toFixed(4)})`;
+
+  const extraInfo = isInterval
+    ? `<div class="feature-extra">
+         <span class="feature-extra-item">平均斜率: <b>${feature.slope.toFixed(4)}</b></span>
+         <span class="feature-extra-item">ΔY: <b>${feature.deltaY.toFixed(4)}</b></span>
+         <span class="feature-extra-item">ΔX: <b>${feature.deltaX.toFixed(4)}</b></span>
+       </div>`
+    : (feature.curvature !== undefined
+       ? `<div class="feature-extra"><span class="feature-extra-item">曲率: <b>${feature.curvature.toFixed(4)}</b></span></div>`
+       : '');
+
+  const confidencePercent = (feature.confidence * 100).toFixed(1);
+  const confidenceColor = feature.confidence >= 0.8 ? '#10b981' : feature.confidence >= 0.5 ? '#f59e0b' : '#ef4444';
+
+  return `
+    <div class="feature-card ${feature.confirmed ? 'confirmed' : ''}" data-id="${feature.id}" data-type="${feature.type}"
+         style="border-color: ${info.borderColor}; background: ${info.bgColor};">
+      <div class="feature-card-header">
+        <div class="feature-title">
+          <span class="feature-icon">${info.icon}</span>
+          <span class="feature-label" style="color: ${info.color};">${info.label}</span>
+        </div>
+        <div class="feature-actions">
+          <button class="feature-btn confirm-btn" onclick="toggleFeatureConfirmation('${feature.id}', true)" title="确认">
+            ${feature.confirmed ? '✓' : '○'}
+          </button>
+          <button class="feature-btn reject-btn" onclick="toggleFeatureConfirmation('${feature.id}', false)" title="取消">
+            ${feature.confirmed === false ? '✕' : '×'}
+          </button>
+        </div>
+      </div>
+      <div class="feature-coord">${coordText}</div>
+      ${extraInfo}
+      <div class="feature-confidence">
+        <div class="confidence-bar-bg">
+          <div class="confidence-bar" style="width: ${confidencePercent}%; background: ${confidenceColor};"></div>
+        </div>
+        <span class="confidence-text" style="color: ${confidenceColor};">置信度 ${confidencePercent}%</span>
+      </div>
+      <div class="feature-basis">
+        <span class="basis-label">判断依据:</span>
+        <span class="basis-text">${feature.basis}</span>
+      </div>
+      <div class="feature-status">
+        ${feature.confirmed === true ? '<span class="status-badge status-confirmed">✓ 用户已确认</span>' :
+          feature.confirmed === false ? '<span class="status-badge status-rejected">✕ 已排除</span>' :
+          '<span class="status-badge status-pending">待确认</span>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderFeatures(features) {
+  if (!features) return;
+
+  const container = document.getElementById('featuresContainer');
+  const section = document.getElementById('featuresSection');
+  container.innerHTML = '';
+
+  const allFeatures = [];
+  if (features.peaks && features.peaks.length > 0) {
+    features.peaks.forEach(f => allFeatures.push(f));
+  }
+  if (features.valleys && features.valleys.length > 0) {
+    features.valleys.forEach(f => allFeatures.push(f));
+  }
+  if (features.inflectionPoints && features.inflectionPoints.length > 0) {
+    features.inflectionPoints.forEach(f => allFeatures.push(f));
+  }
+  if (features.maxRiseInterval) {
+    allFeatures.push(features.maxRiseInterval);
+  }
+
+  if (allFeatures.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  const categoryHeaders = [];
+  if (features.peaks && features.peaks.length > 0) {
+    categoryHeaders.push(`<div class="feature-category"><span class="category-dot" style="background:#10b981"></span>峰值 (${features.peaks.length})</div>`);
+    features.peaks.forEach(f => { container.innerHTML += renderFeatureCard(f, 'peak'); });
+  }
+  if (features.valleys && features.valleys.length > 0) {
+    categoryHeaders.push(`<div class="feature-category"><span class="category-dot" style="background:#f97316"></span>谷值 (${features.valleys.length})</div>`);
+    features.valleys.forEach(f => { container.innerHTML += renderFeatureCard(f, 'valley'); });
+  }
+  if (features.inflectionPoints && features.inflectionPoints.length > 0) {
+    categoryHeaders.push(`<div class="feature-category"><span class="category-dot" style="background:#8b5cf6"></span>拐点候选 (${features.inflectionPoints.length})</div>`);
+    features.inflectionPoints.forEach(f => { container.innerHTML += renderFeatureCard(f, 'inflection'); });
+  }
+  if (features.maxRiseInterval) {
+    categoryHeaders.push(`<div class="feature-category"><span class="category-dot" style="background:#06b6d4"></span>最大上升区间</div>`);
+    container.innerHTML += renderFeatureCard(features.maxRiseInterval, 'maxRiseInterval');
+  }
+
+  section.style.display = 'block';
+}
+
+function findFeatureById(id) {
+  if (!currentFeatures) return null;
+  const all = [
+    ...(currentFeatures.peaks || []),
+    ...(currentFeatures.valleys || []),
+    ...(currentFeatures.inflectionPoints || [])
+  ];
+  if (currentFeatures.maxRiseInterval) all.push(currentFeatures.maxRiseInterval);
+  return all.find(f => f.id === id) || null;
+}
+
+async function toggleFeatureConfirmation(featureId, confirmed) {
+  const feature = findFeatureById(featureId);
+  if (!feature) return;
+
+  if (confirmed && feature.confirmed === true) {
+    feature.confirmed = null;
+  } else if (!confirmed && feature.confirmed === false) {
+    feature.confirmed = null;
+  } else {
+    feature.confirmed = confirmed;
+  }
+
+  if (currentResultId) {
+    try {
+      await fetch(`/api/history/${currentResultId}/features`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features: currentFeatures })
+      });
+    } catch (e) {
+      console.warn('保存特征确认状态失败:', e);
+    }
+  }
+
+  renderFeatures(currentFeatures);
+  updateChartFeatureStyles();
+}
+
+function updateChartFeatureStyles() {
+  if (!fitChart || !currentFeatures) return;
+
+  const applyOpacity = (datasetIndex, features, xKey = 'x') => {
+    const ds = fitChart.data.datasets[datasetIndex];
+    ds.data.forEach(pt => {
+      const feat = features.find(f => Math.abs(f[xKey] - pt.x) < 0.001);
+      if (feat && feat.confirmed === false) {
+        ds.pointBackgroundColor = ds.pointBackgroundColor || ds.backgroundColor;
+        ds.backgroundColor = ds.backgroundColor + '40';
+      }
+    });
+  };
+
+  if (currentFeatures.peaks) applyOpacity(3, currentFeatures.peaks);
+  if (currentFeatures.valleys) applyOpacity(4, currentFeatures.valleys);
+  if (currentFeatures.inflectionPoints) applyOpacity(5, currentFeatures.inflectionPoints);
+
+  fitChart.update();
+}
+
 function displayFitResult(result) {
+  currentFeatures = result.features || null;
+
   document.getElementById('metricR2').textContent = result.metrics.rSquared.toFixed(6);
   document.getElementById('metricMSE').textContent = result.metrics.mse.toFixed(6);
   document.getElementById('metricRMSE').textContent = result.metrics.rmse.toFixed(6);
@@ -346,7 +605,32 @@ function displayFitResult(result) {
   fitChart.data.datasets[0].data = normalPoints;
   fitChart.data.datasets[1].data = result.curvePoints;
   fitChart.data.datasets[2].data = outlierPoints;
+
+  const features = result.features || { peaks: [], valleys: [], maxRiseInterval: null, inflectionPoints: [] };
+
+  fitChart.data.datasets[3].data = features.peaks ? features.peaks.map(p => ({ x: p.x, y: p.y })) : [];
+  fitChart.data.datasets[4].data = features.valleys ? features.valleys.map(v => ({ x: v.x, y: v.y })) : [];
+  fitChart.data.datasets[5].data = features.inflectionPoints ? features.inflectionPoints.map(i => ({ x: i.x, y: i.y })) : [];
+
+  if (features.maxRiseInterval) {
+    const intervalData = [];
+    const { startX, startY, endX, endY } = features.maxRiseInterval;
+    const step = (endX - startX) / 20;
+    for (let x = startX; x <= endX; x += step) {
+      const curvePt = result.curvePoints.reduce((closest, cp) => {
+        return Math.abs(cp.x - x) < Math.abs(closest.x - x) ? cp : closest;
+      }, result.curvePoints[0]);
+      intervalData.push({ x, y: curvePt ? curvePt.y : startY + ((endY - startY) * (x - startX) / (endX - startX)) });
+    }
+    fitChart.data.datasets[6].data = intervalData;
+    fitChart.data.datasets[6].pointRadius = 0;
+  } else {
+    fitChart.data.datasets[6].data = [];
+  }
+
   fitChart.update();
+  updateChartFeatureStyles();
+  renderFeatures(features);
 
   const residualData = result.points.map((p, i) => ({
     x: p.x,

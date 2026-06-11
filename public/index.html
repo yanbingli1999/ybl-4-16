@@ -100,6 +100,10 @@
                 <span class="legend-item"><span class="legend-color" style="background:#3b82f6"></span>原始数据</span>
                 <span class="legend-item"><span class="legend-color" style="background:#ef4444"></span>拟合曲线</span>
                 <span class="legend-item"><span class="legend-color" style="background:#f59e0b"></span>异常点</span>
+                <span class="legend-item"><span class="legend-marker" style="background:#10b981">▲</span>峰值</span>
+                <span class="legend-item"><span class="legend-marker" style="background:#f97316">▼</span>谷值</span>
+                <span class="legend-item"><span class="legend-marker" style="background:#8b5cf6">◆</span>拐点</span>
+                <span class="legend-item"><span class="legend-color" style="background:#06b6d4;border-style:dashed"></span>最大上升区间</span>
               </div>
             </div>
             <div class="chart-wrapper">
@@ -124,6 +128,14 @@
         <div class="outliers-section" id="outliersSection" style="display:none;">
           <h3>⚠️ 异常点标记 (Z-score > 2)</h3>
           <div id="outliersList" class="outliers-list"></div>
+        </div>
+
+        <div class="features-section" id="featuresSection" style="display:none;">
+          <div class="features-header">
+            <h3>🔬 曲线形态解释</h3>
+            <span class="features-tip">点击 ✓ 或 ✕ 可确认/取消关键点</span>
+          </div>
+          <div id="featuresContainer" class="features-container"></div>
         </div>
       </main>
 

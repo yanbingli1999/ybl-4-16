@@ -604,6 +604,249 @@ body {
   border-bottom: 2px solid #e2e8f0;
 }
 
+.legend-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.features-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.features-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.features-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.features-tip {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.features-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feature-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.category-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.feature-card {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.feature-card.confirmed {
+  border-style: solid;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.feature-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.feature-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feature-icon {
+  font-size: 16px;
+}
+
+.feature-label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.feature-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.feature-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.feature-btn:hover {
+  transform: scale(1.1);
+}
+
+.confirm-btn {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.confirm-btn:hover {
+  background: #10b981;
+  color: white;
+}
+
+.reject-btn {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.reject-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.feature-coord {
+  font-family: 'Cambria Math', 'Consolas', monospace;
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.feature-extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.feature-extra-item {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.feature-extra-item b {
+  color: #1e293b;
+  font-family: 'Cambria Math', 'Consolas', monospace;
+}
+
+.feature-confidence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.confidence-bar-bg {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.confidence-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.confidence-text {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 70px;
+  text-align: right;
+}
+
+.feature-basis {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  background: rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.basis-label {
+  font-weight: 600;
+  color: #475569;
+  margin-right: 6px;
+}
+
+.basis-text {
+  color: #64748b;
+}
+
+.feature-status {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-pending {
+  background: rgba(148, 163, 184, 0.15);
+  color: #64748b;
+}
+
+.status-confirmed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
 @media (max-width: 1400px) {
   .main-layout {
     grid-template-columns: 300px 1fr 280px;
